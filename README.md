@@ -9,10 +9,12 @@ I will be creating folders and sub folders categorized by school projects and pe
 All of these projects will be coded in Golang, Python, C++ or C#. I will also include my largest detailed projects on the 
 front page for ease of access and showcase.
 
-```
-One such project will be my textRPG project coded in Go. 
-Which can be found here: * [goTextRPG](https://github.com/ohhnate/Projects/blob/master/textRPG.go) - Golang textRPG by Samuel Fuller and Derek Bergman
-```
+### Showcase
+
+Showcase includes all myself proclaimed best projects that have been finished or currently progressing.
+
+* **TextRPG created in Go** [TextRPG](https://github.com/ohhnate/Projects/blob/master/School/Go/CSCI%2020/textRPG.go)
+* **Discord Bot created in Go** [DiscordBot](https://github.com/ohhnate/Projects/tree/master/Hobby)
 
 ## Running tests
 
