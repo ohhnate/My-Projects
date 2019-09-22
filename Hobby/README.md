@@ -1,4 +1,4 @@
-## Discord Bot
+## Discord Bot in Go
 
 This discord bot is unfinished and is a work in progress.
 
