@@ -1,7 +1,7 @@
 // Project1
 //Item purchaser
 // Programmer name: Samuel Fuller
-// Date completed:  12 Sep 2019
+// Last modified:  25 Sep 2019
 
 #include "cinreader.h"
 #include <algorithm>
