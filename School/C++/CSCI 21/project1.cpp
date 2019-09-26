@@ -90,7 +90,7 @@ void commands(string view) {
     cout << right << setw(35) << "| COMMAND LIST |\n";
     cout << right << setw(43) << "|-------------------------------|\n";
     cout << right << setw(43) << "| 'back' to go to previous menu |\n";
-    cout << right << setw(43) << "| 'checkout' to view your cart  |\n";
+    cout << right << setw(43) << "| 'checkout' to pay for items   |\n";
     cout << right << setw(43) << "| Type 'exit' to leave the shop |\n";
     cout << right << setw(43) << "|-------------------------------|\n";
   }
@@ -211,12 +211,14 @@ void addToCartItem(Cart &cart, Item &cake, Item &fruit, Item &chips, Item &soda,
       cart.price = cart.price + cake.price;
       itemAmount = addToCartAmount(cart, cake, c);
       reduceQuantity(cake, itemAmount);
-      cout << "Added " << cake.name << " to your cart.";
+      cout << "\nAdded " << itemAmount << " " << cake.name << " to your cart!";
       cake.addedToCart = true;
+      sleep(2000);
     } else {
       itemAmount = addToCartAmount(cart, cake, c);
       reduceQuantity(cake, itemAmount);
-      cout << "Added " << itemAmount << cake.name << " to your cart.";
+      cout << "\nAdded " << itemAmount << " " << cake.name << " to your cart!";
+      sleep(2000);
     }  
   } else if (item == "fruit"){
       if (fruit.addedToCart == false) {
@@ -224,12 +226,14 @@ void addToCartItem(Cart &cart, Item &cake, Item &fruit, Item &chips, Item &soda,
         cart.price = cart.price + fruit.price;
         itemAmount = addToCartAmount(cart, fruit, c);
         reduceQuantity(fruit, itemAmount);
-        cout << "Added " << fruit.name << " to your cart.";
+        cout << "\nAdded " << itemAmount << " " << fruit.name << " to your cart!";
         fruit.addedToCart = true;
+        sleep(2000);
       } else {
         itemAmount = addToCartAmount(cart, fruit, c);
         reduceQuantity(fruit, itemAmount);
-        cout << "Added " << itemAmount << fruit.name << " to your cart.";
+        cout << "\nAdded " << itemAmount << " " << fruit.name << " to your cart!";
+        sleep(2000);
       }
   } else if (item == "chips"){
       if (chips.addedToCart == false) {
@@ -237,12 +241,14 @@ void addToCartItem(Cart &cart, Item &cake, Item &fruit, Item &chips, Item &soda,
         cart.price = cart.price + chips.price;
         itemAmount = addToCartAmount(cart, chips, c);
         reduceQuantity(chips,itemAmount);
-        cout << "Added " << chips.name << " to your cart.";
+        cout << "\nAdded " << itemAmount << " " << chips.name << " to your cart!";
         chips.addedToCart = true;
+        sleep(2000);
       } else {
         itemAmount = addToCartAmount(cart, chips, c);
         reduceQuantity(chips, itemAmount);
-        cout << "Added " << itemAmount << chips.name << " to your cart.";
+        cout << "\nAdded " << itemAmount << " " << chips.name << " to your cart!";
+        sleep(2000);
       }
   } else if (item == "soda"){
       if (soda.addedToCart == false) {
@@ -250,12 +256,14 @@ void addToCartItem(Cart &cart, Item &cake, Item &fruit, Item &chips, Item &soda,
         cart.price = cart.price + soda.price;
         itemAmount = addToCartAmount(cart, soda, c);
         reduceQuantity(soda, itemAmount);
-        cout << "Added " << soda.name << " to your cart.";
+        cout << "\nAdded " << itemAmount << " " << soda.name << " to your cart!";
         soda.addedToCart = true;
+        sleep(2000);
       } else {
         itemAmount = addToCartAmount(cart, soda, c);
         reduceQuantity(soda, itemAmount);
-        cout << "Added " << itemAmount << soda.name << " to your cart.";
+        cout << "\nAdded " << itemAmount << " " << soda.name << " to your cart!";
+        sleep(2000);
       }
   } else if (item == "juice"){
       if (juice.addedToCart == false) {
@@ -263,12 +271,14 @@ void addToCartItem(Cart &cart, Item &cake, Item &fruit, Item &chips, Item &soda,
         cart.price = cart.price + juice.price;
         itemAmount = addToCartAmount(cart, juice, c);
         reduceQuantity(juice, itemAmount);
-        cout << "Added " << juice.name << " to your cart.";
+        cout << "\nAdded " << itemAmount << " " << juice.name << " to your cart!";
         juice.addedToCart = true;
+        sleep(2000);
       } else {
         itemAmount = addToCartAmount(cart, juice, c);
         reduceQuantity(juice, itemAmount);
-        cout << "Added " << itemAmount << juice.name << " to your cart.";
+        cout << "\nAdded " << itemAmount << " " << juice.name << " to your cart!";
+        sleep(2000);
       }
   }
 }
