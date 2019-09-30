@@ -30,17 +30,19 @@
 
 using namespace std;
 
+CinReader c;
+
 //Shop is the driver for when the program exits loop or not
 struct Shop {
   bool running = true;
 };
 
-//Item is an object of shops items
+//Item is an object of items created for the machine
 struct Item {
   string name;
   double price;
-  unsigned int quantity;
-  unsigned int amountInCart;
+  int quantity;
+  int amountInCart;
   bool addedToCart;
 };
 
@@ -48,8 +50,10 @@ struct Item {
 struct Cart {
   vector<Item> item;
   double price;
+  int amountInCart;
 };
 
+//Machine contains list of items the machine offers
 struct Machine {
   vector<Item> menu;
 };
@@ -106,19 +110,21 @@ void menu(string view) {
 }
 
 //menuRow displays each row of the menu with each item
-void menuRow(Item &i) {
+void menuRow(Machine &machine) {
   cout.setf(ios::fixed);
   cout.setf(ios::showpoint);
   cout.precision(2);
-  cout << right << setw(8) <<  "| ";
-  cout << left << setw(17) << i.name;
-  cout << left << setw(16) << i.price;
-  cout << left << setw(4) << i.quantity;
-  cout << setw(5) << "|";
-  cout << setw(7);
-  cout << "\n";
-  cout << "|--------------------------------------|";
-  cout << "\n";
+  for (Item i : machine.menu) {
+    cout << right << setw(8) <<  "| ";
+    cout << left << setw(17) << i.name;
+    cout << left << setw(16) << i.price;
+    cout << left << setw(4) << i.quantity;
+    cout << setw(5) << "|";
+    cout << setw(7);
+    cout << "\n";
+    cout << "|--------------------------------------|";
+    cout << "\n";
+  }
 }
 
 //itemToString converts an item object to a string for menu/cart display
@@ -132,18 +138,63 @@ string itemToString(Item &i) {
   return strout.str();
 }
 
-//initItem initializes shop items
-void initItem(Item &i, string name, double price, unsigned int quantity,
-              unsigned int amountInCart, bool addedToCart) {
-  i.name = name;
-  i.price = price;
-  i.quantity = quantity;
-  i.amountInCart = amountInCart;
-  i.addedToCart = addedToCart;
+//stringToItem converts a string into item equivalent
+Item stringToItem(string item, Machine machine) {
+  Item empty;
+  for (Item i : machine.menu) {
+    if (item == i.name) {
+      return i;
+    }
+  }
+  return empty;
 }
 
+//initItem initializes shop items
+void initItem(Item &item, string name, double price, int quantity,
+              int amountInCart, bool addedToCart) {
+  item.name = name;
+  item.price = price;
+  item.quantity = quantity;
+  item.amountInCart = amountInCart;
+  item.addedToCart = addedToCart;
+}
+
+void removeItem(Machine &machine, Cart &cart) {
+  int index;
+  string removeItem;
+  Item item;
+  int removeAmount;
+  cout << "\nWhich item would you like to remove?";
+  removeItem = c.readString();
+  transform(removeItem.begin(), removeItem.end(), removeItem.begin(), ::tolower);
+  item = stringToItem(removeItem, machine);
+  
+  for (Item &i : cart.item) {
+    index ++;
+    if (item.name == i.name) {
+      if (i.amountInCart > 1) {  
+        cout << "\nHow many would you like to remove?";
+        removeAmount = c.readInt(1, i.amountInCart);
+      } else if (i.amountInCart == 0) {
+        cout << "Nothing was removed. :)";
+        sleep(1500);
+      }
+      if (i.amountInCart == removeAmount) {
+        cart.item.erase(cart.item.begin() + index);
+        cart.price = cart.price - (i.price * removeAmount);
+        break;
+      } else if (i.amountInCart > removeAmount) {
+        cart.price = cart.price - (i.price * removeAmount);
+        break;
+      } 
+    }
+  }
+}
+
+
 //showCart displays the users current cart with or without items
-void showCart(Shop &shop, Cart &cart, string view, CinReader c) {
+void showCart(Shop &shop, Machine machine, Cart &cart, string view) {
+  // calculateCart(cart);
   string view2;
   if (view == "cart") {
     clearScreen();
@@ -154,12 +205,21 @@ void showCart(Shop &shop, Cart &cart, string view, CinReader c) {
       cout << "\n";
       cout << right << setw(47) << "|--------------------------------------|\n";
     }
+    cout << right << setw(7) <<  "|";
+    cout << left << setw(17) << " Total: ";
+    cout << left << "$" << left << setw(17) << cart.price;
+    cout << left << setw(3) << cart.amountInCart;
+    cout << left << "|\n";
+    // cout << right << setw(16) << "| Total: $" << cart.price << "\n";
+    cout << right << setw(47) << "|--------------------------------------|\n";
     cout << "\nInput a command: ";
     view2 = c.readString();
     transform(view.begin(), view.end(), view.begin(), ::tolower);
   }
   if (view2 == "back") {
 
+  } else if (view2 == "remove") {
+    removeItem(machine, cart);
   } else if (view2 == "exit") {
     shop.running = false;
   } else if (view2 == "checkout") {
@@ -171,18 +231,23 @@ void showCart(Shop &shop, Cart &cart, string view, CinReader c) {
 }
 
 //reduceQuantity reduces quantity of shop inventory when added to users cart
-void reduceQuantity(Item &i, unsigned int amount) {
-  if (amount >= i.quantity) {
-    i.quantity = 0;
-  }
-  else {
-    i.quantity = i.quantity - amount;
+void reduceQuantity(Machine &machine, Item &item, int amount) {
+  for (Item &i : machine.menu) {
+    if (item.name == i.name) {
+      if (amount >= i.quantity) {
+        i.quantity = 0;
+        item.quantity = 0;
+      } else {
+        item.quantity = item.quantity - amount;
+        i.quantity = i.quantity - amount;
+      }
+    }
   }
 }
 
 //addToCartAmount asks user how many of each item should be added to cart
 //and adds the corresponding amount
-int addToCartAmount(Cart &cart, Item &item, CinReader c) {
+int addToCartAmount(Cart &cart, Item &item) {
   int itemAmount;
   cout << "How many would you like to purchase: ";
   itemAmount = c.readInt(0, item.quantity);
@@ -191,170 +256,52 @@ int addToCartAmount(Cart &cart, Item &item, CinReader c) {
       cart.item[i].amountInCart += itemAmount;
     }
   }
+  cart.amountInCart += itemAmount;
+  item.amountInCart += itemAmount;
+  cart.price = cart.price + (item.price * itemAmount);
   return itemAmount;
 }
 
-//addToCartItem adds users selected item to users cart or provides error
-void addToCartItem(Cart &cart, Item &cake, Item &fruit, Item &chips, Item &soda,
-                   Item &juice, string &item, CinReader c) {
+
+void addToCartItem(Machine &machine, Cart &cart, Item &item) {
   int itemAmount;
-  if (item == "cake"){
-    if (cake.addedToCart == false) {
-      cart.item.push_back(cake);
-      cart.price = cart.price + cake.price;
-      itemAmount = addToCartAmount(cart, cake, c);
-      if (itemAmount > 0) {
-        reduceQuantity(cake, itemAmount);
-        cout << "Added " << itemAmount << " " << cake.name << " to your cart!";
-        cake.addedToCart = true;
-        sleep(1500);
+  for (Item &i : machine.menu) {
+    if (item.name == i.name) {
+      if (i.addedToCart == false) {
+        cart.item.push_back(item);
+        itemAmount = addToCartAmount(cart, item);
+        if (itemAmount > 0) {
+          reduceQuantity(machine, item, itemAmount);
+          cout << "Added " << itemAmount << " " << item.name << " to your cart.";
+          i.addedToCart = true;
+          sleep(100);
+        } else {
+          cout << "Nothing has been added :(";
+          sleep(100);
+        }
       } else {
-        cout << "Nothing has been added :(";
-        sleep(1500);
-      }
-    } else {
-      itemAmount = addToCartAmount(cart, cake, c);
-      if (itemAmount > 0) {
-        reduceQuantity(cake, itemAmount);
-        cout << "Added another" << itemAmount << " " << cake.name << " to your cart!";
-        sleep(1500);
-      } else {
-        cout << "Nothing has been added :(";
-        sleep(1500);
-      }
-    }
-  } else if (item == "fruit"){
-    if (fruit.addedToCart == false) {
-      cart.item.push_back(fruit);
-      cart.price = cart.price + fruit.price;
-      itemAmount = addToCartAmount(cart, fruit, c);
-      if (itemAmount > 0) {
-        reduceQuantity(fruit, itemAmount);
-        cout << "Added " << itemAmount << " " << fruit.name << " to your cart!";
-        fruit.addedToCart = true;
-        sleep(1500);
-      } else {
-        cout << "Nothing has been added :(";
-        sleep(1500);
-      }
-    } else {
-      itemAmount = addToCartAmount(cart, fruit, c);
-      if (itemAmount > 0) {
-        reduceQuantity(fruit, itemAmount);
-        cout << "Added another" << itemAmount << " " << fruit.name << " to your cart!";
-        sleep(1500);
-      } else {
-        cout << "Nothing has been added :(";
-        sleep(1500);
-      }
-    }
-  } else if (item == "chips"){
-    if (chips.addedToCart == false) {
-      cart.item.push_back(chips);
-      cart.price = cart.price + chips.price;
-      itemAmount = addToCartAmount(cart, chips, c);
-      if (itemAmount > 0) {
-        reduceQuantity(chips, itemAmount);
-        cout << "Added " << itemAmount << " " << chips.name << " to your cart!";
-        chips.addedToCart = true;
-        sleep(1500);
-      } else {
-        cout << "Nothing has been added :(";
-        sleep(1500);
-      }
-    } else {
-      itemAmount = addToCartAmount(cart, chips, c);
-      if (itemAmount > 0) {
-        reduceQuantity(chips, itemAmount);
-        cout << "Added another" << itemAmount << " " << chips.name << " to your cart!";
-        sleep(1500);
-      } else {
-        cout << "Nothing has been added :(";
-        sleep(1500);
-      }
-    }
-  } else if (item == "soda"){
-    if (soda.addedToCart == false) {
-      cart.item.push_back(soda);
-      cart.price = cart.price + soda.price;
-      itemAmount = addToCartAmount(cart, soda, c);
-      if (itemAmount > 0) {
-        reduceQuantity(soda, itemAmount);
-        cout << "Added " << itemAmount << " " << soda.name << " to your cart!";
-        soda.addedToCart = true;
-        sleep(1500);
-      } else {
-        cout << "Nothing has been added :(";
-        sleep(1500);
-      }
-    } else {
-      itemAmount = addToCartAmount(cart, soda, c);
-      if (itemAmount > 0) {
-        reduceQuantity(soda, itemAmount);
-        cout << "Added another" << itemAmount << " " << soda.name << " to your cart!";
-        sleep(1500);
-      } else {
-        cout << "Nothing has been added :(";
-        sleep(1500);
-      }
-    }
-  } else if (item == "juice"){
-    if (juice.addedToCart == false) {
-      cart.item.push_back(juice);
-      cart.price = cart.price + juice.price;
-      itemAmount = addToCartAmount(cart, juice, c);
-      if (itemAmount > 0) {
-        reduceQuantity(juice, itemAmount);
-        cout << "Added " << itemAmount << " " << juice.name << " to your cart!";
-        cake.addedToCart = true;
-        sleep(1500);
-      } else {
-        cout << "Nothing has been added :(";
-        sleep(1500);
-      }
-    } else {
-      itemAmount = addToCartAmount(cart, juice, c);
-      if (itemAmount > 0) {
-        reduceQuantity(juice, itemAmount);
-        cout << "Added another" << itemAmount << " " << juice.name << " to your cart!";
-        sleep(1500);
-      } else {
-        cout << "Nothing has been added :(";
-        sleep(1500);
+        itemAmount = addToCartAmount(cart, item);
+          if (itemAmount > 0) {
+            reduceQuantity(machine, item, itemAmount);
+            cout << "Added another " << itemAmount << " " << item.name << " to your cart.";
+            sleep(100);
+        } else {
+          cout << "Nothing has been added :(";
+          sleep(100);
+        }
       }
     }
   }
 }
 
 //quantityCheck checks if an item can be purchased based on inventory
-bool quantityCheck(Item cake, Item fruit, Item chips, Item soda,
-                   Item juice, string item, CinReader c) {
-
-
-  if (item == "cake") {
-    if (cake.quantity < 1){
-      cout << "Sorry there aren't any left choose again or proceed to checkout.";
-      return false;
-    }
-  } else if (item == "fruit") {
-      if (fruit.quantity < 1){
+bool quantityCheck(Machine &machine, Item &item) {
+  for (Item i : machine.menu) {
+    if (i.name == item.name) {
+      if (item.quantity < 1) {
         cout << "Sorry there aren't any left choose again or proceed to checkout.";
         return false;
-    }
-  } else if (item == "chips") {
-      if (chips.quantity < 1){
-        cout << "Sorry there aren't any left choose again or proceed to checkout.";
-        return false;
-    }
-  } else if (item == "soda") {
-      if (soda.quantity < 1){
-        cout << "Sorry there aren't any left choose again or proceed to checkout.";
-        return false;
-    }
-  } else if (item == "juice") {
-      if (juice.quantity < 1){
-        cout << "Sorry there aren't any left choose again or proceed to checkout.";
-        return false;
+      }
     }
   }
   return true;
@@ -362,35 +309,40 @@ bool quantityCheck(Item cake, Item fruit, Item chips, Item soda,
 
 //selectItem asks user to select an item for purchase, this is sort of the
 //primary program driver and includes recursive call for loop
-void selectItem(Shop &shop, Cart &cart, Item &cake, Item &fruit, Item &chips,
-               Item &soda, Item &juice, CinReader c) {
+void selectItem(Shop &shop, Machine &machine, Cart &cart) {
   string itemChoice;
+  Item item;
   cout << "\nInput a command: ";
   itemChoice = c.readString();
 //transform to iterate over the string 'itemChoice' to change each character
 //to lowercase for multiple input variations
   transform(itemChoice.begin(), itemChoice.end(), itemChoice.begin(), ::tolower);
-
+  
+  item = stringToItem(itemChoice, machine);
+  
   if (itemChoice == "cake" || itemChoice == "fruit" || itemChoice == "chips"
-  || itemChoice == "soda" || itemChoice == "juice"){
-    if (quantityCheck(cake, fruit, chips, soda, juice, itemChoice, c) == true){
-      addToCartItem(cart, cake, fruit, chips, soda, juice, itemChoice, c);
+  || itemChoice == "soda" || itemChoice == "juice") {
+    for (Item &i : machine.menu) {
+      if (item.name == i.name) {
+        if (quantityCheck(machine, item)) {
+          addToCartItem(machine, cart, item);
+        } else {
+          selectItem(shop, machine, cart);
+          }
+        } 
+      }
+    } else if (itemChoice == "cart") {
+      showCart(shop, machine, cart, itemChoice);
+    } else if (itemChoice == "exit") {
+      shop.running = false;
     } else {
-      selectItem(shop, cart, cake, fruit, chips, soda, juice, c);
-    }
-  } else if (itemChoice == "cart") {
-    showCart(shop, cart, itemChoice, c);
-  } else if (itemChoice == "exit") {
-    shop.running = false;
-  } else {
-    cout << "That is an invalid selection please choose again.";
-    selectItem(shop, cart, cake, fruit, chips, soda, juice, c);
+      cout << "That is an invalid selection please choose again.";
+      selectItem(shop, machine, cart);
   }
 }
 
 main(){
   clearScreen();
-  CinReader cinreader;
   Shop shop;
   Item cake;
   Item fruit;
@@ -398,11 +350,11 @@ main(){
   Item soda;
   Item juice;
   Cart cart;
-  initItem(cake, "Cake", 3.00, 5, 0, false);
-  initItem(fruit, "Fruit", 4.20, 15, 0, false);
-  initItem(chips, "Chips", 1.00, 6, 0, false);
-  initItem(soda, "Soda", 1.50, 7, 0, false);
-  initItem(juice, "Juice", 1.90, 10, 0, false);
+  initItem(cake, "cake", 3.00, 5, 0, false);
+  initItem(fruit, "fruit", 4.20, 15, 0, false);
+  initItem(chips, "chips", 1.00, 6, 0, false);
+  initItem(soda, "soda", 1.50, 7, 0, false);
+  initItem(juice, "juice", 1.90, 10, 0, false);
 
   Machine machine;
   machine.menu.push_back(cake);
@@ -416,12 +368,8 @@ main(){
     clearScreen();
     banner();
     menu("main");
-    menuRow(cake);
-    menuRow(fruit);
-    menuRow(chips);
-    menuRow(soda);
-    menuRow(juice);
-    selectItem(shop, cart, cake, fruit, chips, soda, juice, cinreader);
+    menuRow(machine);
+    selectItem(shop, machine, cart);
   }
   cout << "\n\n";
   fancyDelay("Goodbye...", 150);
