@@ -159,38 +159,58 @@ void initItem(Item &item, string name, double price, int quantity,
   item.addedToCart = addedToCart;
 }
 
+void increaseQuantity(Machine &machine, Item &item, int amount) {
+  for (Item &i : machine.menu) {
+    if (item.name == i.name) {
+      item.quantity = item.quantity + amount;
+      i.quantity = i.quantity + amount;
+    } 
+  }
+}
+
 void removeItem(Machine &machine, Cart &cart) {
-  int index;
+  int index = 0;
   string removeItem;
   Item item;
-  int removeAmount;
-  cout << "\nWhich item would you like to remove?";
+  int removeAmount = 0;
+  
+  cout << "Which item would you like to remove?";
   removeItem = c.readString();
   transform(removeItem.begin(), removeItem.end(), removeItem.begin(), ::tolower);
+  
   item = stringToItem(removeItem, machine);
   
   for (Item &i : cart.item) {
     index ++;
     if (item.name == i.name) {
-      if (i.amountInCart > 1) {  
-        cout << "\nHow many would you like to remove?";
-        removeAmount = c.readInt(1, i.amountInCart);
-      } else if (i.amountInCart == 0) {
-        cout << "Nothing was removed. :)";
+      if (i.amountInCart >= 1) {  
+        cout << "How many would you like to remove?";
+        removeAmount = c.readInt(1, i.amountInCart); 
+        if (i.amountInCart == removeAmount) {
+          cart.price = cart.price - (i.price * removeAmount);
+          cart.amountInCart = cart.amountInCart - removeAmount;
+          i.amountInCart = i.amountInCart - removeAmount;
+          i.addedToCart == false;
+          cart.item.erase(cart.item.begin() + index - 1);
+        } else if (i.amountInCart > removeAmount) {
+          cart.price = cart.price - (i.price * removeAmount);
+          cart.amountInCart = cart.amountInCart - removeAmount;
+          i.amountInCart = i.amountInCart - removeAmount;
+          i.addedToCart == false;
+       }
+      } else {
+        cout << "That item isn't in the cart to remove. :(";
         sleep(1500);
       }
-      if (i.amountInCart == removeAmount) {
-        cart.item.erase(cart.item.begin() + index);
-        cart.price = cart.price - (i.price * removeAmount);
-        break;
-      } else if (i.amountInCart > removeAmount) {
-        cart.price = cart.price - (i.price * removeAmount);
-        break;
-      } 
+      increaseQuantity(machine, i, removeAmount);    
     }
   }
+  for (Item &j : machine.menu) {
+    if (item.name == j.name) {
+      j.addedToCart == false;
+    } 
+  }
 }
-
 
 //showCart displays the users current cart with or without items
 void showCart(Shop &shop, Machine machine, Cart &cart, string view) {
@@ -217,13 +237,11 @@ void showCart(Shop &shop, Machine machine, Cart &cart, string view) {
     transform(view.begin(), view.end(), view.begin(), ::tolower);
   }
   if (view2 == "back") {
-
   } else if (view2 == "remove") {
     removeItem(machine, cart);
   } else if (view2 == "exit") {
     shop.running = false;
   } else if (view2 == "checkout") {
-
   } else {
     cout << "That is an invalid entry. Please enter again.";
     sleep(1500);
@@ -262,7 +280,7 @@ int addToCartAmount(Cart &cart, Item &item) {
   return itemAmount;
 }
 
-
+//addToCartItem adds slected item to the cart and updates menu/cart values
 void addToCartItem(Machine &machine, Cart &cart, Item &item) {
   int itemAmount;
   for (Item &i : machine.menu) {
@@ -274,20 +292,20 @@ void addToCartItem(Machine &machine, Cart &cart, Item &item) {
           reduceQuantity(machine, item, itemAmount);
           cout << "Added " << itemAmount << " " << item.name << " to your cart.";
           i.addedToCart = true;
-          sleep(100);
+          sleep(1000);
         } else {
           cout << "Nothing has been added :(";
-          sleep(100);
+          sleep(1000);
         }
       } else {
         itemAmount = addToCartAmount(cart, item);
           if (itemAmount > 0) {
             reduceQuantity(machine, item, itemAmount);
             cout << "Added another " << itemAmount << " " << item.name << " to your cart.";
-            sleep(100);
+            sleep(1000);
         } else {
           cout << "Nothing has been added :(";
-          sleep(100);
+          sleep(1000);
         }
       }
     }
