@@ -9,10 +9,11 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <ctime>
 
 #ifdef _WIN32
   #include <windows.h>
-  void sleep(unsigned milliseconds){
+  void msleep(unsigned milliseconds){
         Sleep(milliseconds);
   }
   void clearScreen() {
@@ -20,7 +21,7 @@
   }
 #else
   #include <unistd.h>
-  void sleep(unsigned milliseconds) {
+  void msleep(unsigned milliseconds) {
     usleep(milliseconds * 1000); //* 1000 b/c unix usleep() takes microseconds
   }
   void clearScreen() {
@@ -40,17 +41,17 @@ struct Shop {
 //Item is an object of items created for the machine
 struct Item {
   string name;
-  double price;
-  int quantity;
-  int amountInCart;
-  bool addedToCart;
+  double price = 0.00;
+  int quantity = 0;
+  int amountInCart = 0;
+  bool addedToCart = false;
 };
 
 //Cart is users cart of items for purchase
 struct Cart {
   vector<Item> item;
-  double price;
-  int amountInCart;
+  double price = 0.00;
+  int amountInCart =0;
 };
 
 //Machine contains list of items the machine offers
@@ -58,26 +59,30 @@ struct Machine {
   vector<Item> menu;
 };
 
+struct User {
+  double balance = 0.00;
+};
+
 //fancyDelay simulates "typed text" of a given text and speed
 void fancyDelay(string text, int duration) {
   for (char const &letter: text) {
       cout << letter;
-      sleep(duration);
+      msleep(duration);
     }
 }
 
 //banner displays the program banner
 void banner() {
-  cout << "    _              _            _                      _          \n";
-  cout << "   | |            ( )          | |                    | |         \n";
-  cout << "    \\ \\   ____ ___|/  ___       \\ \\  ____   ____  ____| |  _  ___ \n";
-  cout << "     \\ \\ / _  |    \\ /___)       \\ \\|  _ \\ / _  |/ ___) | / )/___)\n";
-  cout << " _____) | ( | | | | |___ |   _____) ) | | ( ( | ( (___| |< (|___ |\n";
-  cout << "(______/ \\_||_|_|_|_(___/   (______/|_| |_|\\_||_|\\____)_| \\_|___/ \n\n";
+  cout << " ___                     _     _ _              _           \n";
+  cout << "/ __>._ _ _  ___  _ _  _| |_  | | | ___ ._ _  _| | ___  _ _ \n";
+  cout << "\\__ \\| ' ' |<_> || '_>  | |   | ' |/ ._>| ' |/ . |/ . \\| '_>\n";
+  cout << "<___/|_|_|_|<___||_|    |_|   |__/ \\___.|_|_|\\___|\\___/|_|  \n";
+  // cout << " _____) | ( | | | | |___ |   _____) ) | | ( ( | ( (___| |< (|___ |\n";
+  // cout << "(______/ \\_||_|_|_|_(___/   (______/|_| |_|\\_||_|\\____)_| \\_|___/ \n\n";
 }
 
 //menu displays menu and format below the banner
-void menu(string view) {
+void menu(User user, string view) {
   cout << right << setw(56) << "|------------------------------------------------------|\n";
   cout << right << setw(56) << "| Type the below commands for the corresponding action |\n";
   cout << right << setw(56) << "|------------------------------------------------------|\n";
@@ -87,8 +92,9 @@ void menu(string view) {
     cout << right << setw(43) << "| Type item name to select item |\n";
     cout << right << setw(43) << "| Type 'cart' to view your cart |\n";
     cout << right << setw(43) << "| Type 'exit' to leave the shop |\n";
-    cout << right << setw(43) << "|-------------------------------|\n";
-    cout << setw(34) << "[ SHOP ITEMS ]\n";
+    cout << right << setw(44) << "|-------------------------------|\n\n";
+    cout << setw(20) << "| SHOP ITEMS |";
+    cout << right << setw(19) << "| Your Balance: $" << left << setw(5) << user.balance << " |\n";
     cout << right << setw(47) << "|--------------------------------------|\n";
     cout << right << setw(12) << "| Item";
     cout << right << setw(17) << "Price";
@@ -99,13 +105,21 @@ void menu(string view) {
     cout << right << setw(43) << "| 'back' to go to previous menu |\n";
     cout << right << setw(43) << "| 'checkout' to pay for items   |\n";
     cout << right << setw(43) << "| Type 'exit' to leave the shop |\n";
-    cout << right << setw(43) << "|-------------------------------|\n";
-    cout << setw(37) << "[ YOUR CART ITEMS ]\n";
+    cout << right << setw(44) << "|-------------------------------|\n\n";
+    cout << setw(20) << "| CART ITEMS |";
+    cout << right << setw(19) << "| Your Balance: $" << left << setw(5) << user.balance << " |\n";
     cout << right << setw(47) << "|--------------------------------------|\n";
     cout << right << setw(12) << "| Item";
     cout << right << setw(17) << "Price";
     cout << right << setw(18) << "Amount |\n";
     cout << right << setw(47) << "|--------------------------------------|\n";
+  } else if (view == "checkout") {
+    cout << right << setw(30) << "| Your Balance: $" << left << setw(5) << user.balance << " |\n";
+    cout << right << setw(43) << "|-------------------------------|\n";
+    cout << right << setw(43) << "| 'back' to go to previous menu |\n";
+    cout << right << setw(43) << "| 'confirm' to finish checkout  |\n";
+    cout << right << setw(43) << "| Type 'exit' to leave the shop |\n";
+    cout << right << setw(44) << "|-------------------------------|\n\n";
   }
 }
 
@@ -200,7 +214,7 @@ void removeItem(Machine &machine, Cart &cart) {
        }
       } else {
         cout << "That item isn't in the cart to remove. :(";
-        sleep(1500);
+        msleep(1500);
       }
       increaseQuantity(machine, i, removeAmount);    
     }
@@ -212,14 +226,62 @@ void removeItem(Machine &machine, Cart &cart) {
   }
 }
 
+void checkout(Shop &shop, Machine machine, Cart &cart, User &user, string view) {
+  string view2;
+  if (view == "checkout") {
+    clearScreen();
+    banner();
+    menu(user, view);
+    cout << "You have chose to purchase ";
+    for (int i = 0; i < cart.item.size(); i++) {
+      cout << cart.item[i].name;
+      cout << " ";
+      // cout << right << setw(47) << "|--------------------------------------|\n";
+    }
+    cout << " for a total of " << cart.price;
+    cout << " \nWould you like to confirm this purchase: ";
+    view2 = c.readString();
+  }
+  if (view2 == "back") {
+  } else if (view2 == "confirm") {
+    if (user.balance < cart.price) {
+      cout << "\nSorry you do not have enough money. Please remove some items first.";
+      msleep(3000);
+    } else {
+      cout << "\nThank you for your patronage!\n";
+      cout << "You purchased ";
+      for (int i = 0; i < cart.item.size(); i++) {
+        cout << cart.item[i].amountInCart << " " << cart.item[i].name << " ";
+      }
+      cout << " for a total of " << cart.price << ".";
+      user.balance = user.balance - cart.price;
+      cout << "\nYou now have a balance of " << user.balance << " remaining.";
+      cart.item.clear();
+      cart.price = 0;
+      cart.amountInCart = 0;
+      
+      cout << "\nType 'back' to keep shopping or 'exit' to leave: ";
+      view2 = c.readString();
+      if (view2 == "exit") {
+        shop.running = false;
+        }
+      } 
+    } else if (view2 == "exit") {
+      shop.running = false;
+    } else {
+      cout << "That is an invalid entry. Please enter again.";
+      msleep(1500);
+  } 
+}
+
 //showCart displays the users current cart with or without items
-void showCart(Shop &shop, Machine machine, Cart &cart, string view) {
+void showCart(Shop &shop, Machine machine, Cart &cart, User &user, string view) {
   // calculateCart(cart);
   string view2;
   if (view == "cart") {
     clearScreen();
     banner();
-    menu(view);
+    menu(user, view);
     for (int i = 0; i < cart.item.size(); i++) {
       cout << itemToString(cart.item[i]);
       cout << "\n";
@@ -235,16 +297,28 @@ void showCart(Shop &shop, Machine machine, Cart &cart, string view) {
     cout << "\nInput a command: ";
     view2 = c.readString();
     transform(view.begin(), view.end(), view.begin(), ::tolower);
+    
   }
   if (view2 == "back") {
   } else if (view2 == "remove") {
     removeItem(machine, cart);
+    showCart(shop, machine, cart, user, view);
   } else if (view2 == "exit") {
     shop.running = false;
   } else if (view2 == "checkout") {
+    if (cart.item.size() >= 1) {
+      checkout(shop, machine, cart, user, view2);
+    } else {
+      cout << "sorry there are no items in your cart to checkout. Add some!";
+      msleep(2000);
+    }
+    if (shop.running == true && cart.item.size() >= 1) {
+      showCart(shop, machine, cart, user, view);
+    }
   } else {
     cout << "That is an invalid entry. Please enter again.";
-    sleep(1500);
+    msleep(1500);
+    showCart(shop, machine, cart, user, view);
   }
 }
 
@@ -292,20 +366,20 @@ void addToCartItem(Machine &machine, Cart &cart, Item &item) {
           reduceQuantity(machine, item, itemAmount);
           cout << "Added " << itemAmount << " " << item.name << " to your cart.";
           i.addedToCart = true;
-          sleep(1000);
+          msleep(1000);
         } else {
           cout << "Nothing has been added :(";
-          sleep(1000);
+          msleep(1000);
         }
       } else {
         itemAmount = addToCartAmount(cart, item);
           if (itemAmount > 0) {
             reduceQuantity(machine, item, itemAmount);
             cout << "Added another " << itemAmount << " " << item.name << " to your cart.";
-            sleep(1000);
+            msleep(1000);
         } else {
           cout << "Nothing has been added :(";
-          sleep(1000);
+          msleep(1000);
         }
       }
     }
@@ -327,7 +401,7 @@ bool quantityCheck(Machine &machine, Item &item) {
 
 //selectItem asks user to select an item for purchase, this is sort of the
 //primary program driver and includes recursive call for loop
-void selectItem(Shop &shop, Machine &machine, Cart &cart) {
+void selectItem(Shop &shop, Machine &machine, Cart &cart, User &user) {
   string itemChoice;
   Item item;
   cout << "\nInput a command: ";
@@ -345,23 +419,34 @@ void selectItem(Shop &shop, Machine &machine, Cart &cart) {
         if (quantityCheck(machine, item)) {
           addToCartItem(machine, cart, item);
         } else {
-          selectItem(shop, machine, cart);
+          selectItem(shop, machine, cart, user);
           }
         } 
       }
     } else if (itemChoice == "cart") {
-      showCart(shop, machine, cart, itemChoice);
+      showCart(shop, machine, cart, user, itemChoice);
     } else if (itemChoice == "exit") {
       shop.running = false;
     } else {
       cout << "That is an invalid selection please choose again.";
-      selectItem(shop, machine, cart);
+      selectItem(shop, machine, cart, user);
   }
 }
 
+//doubleRand returns a random double
+double doubleRand() {
+  cout.setf(ios::fixed);
+  cout.setf(ios::showpoint);
+  cout.precision(2);
+  int randInt = (rand() % 20) + 1;
+  return double(rand()) / (double(RAND_MAX) + 1.0) + randInt;
+}
+
 main(){
+  srand(time(0));
   clearScreen();
   Shop shop;
+  User user;
   Item cake;
   Item fruit;
   Item chips;
@@ -373,6 +458,9 @@ main(){
   initItem(chips, "chips", 1.00, 6, 0, false);
   initItem(soda, "soda", 1.50, 7, 0, false);
   initItem(juice, "juice", 1.90, 10, 0, false);
+  
+  //initializes user random balance
+  user.balance = doubleRand(); 
 
   Machine machine;
   machine.menu.push_back(cake);
@@ -385,9 +473,9 @@ main(){
   while(shop.running == true){
     clearScreen();
     banner();
-    menu("main");
+    menu(user, "main");
     menuRow(machine);
-    selectItem(shop, machine, cart);
+    selectItem(shop, machine, cart, user);
   }
   cout << "\n\n";
   fancyDelay("Goodbye...", 150);
