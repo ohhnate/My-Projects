@@ -26,19 +26,8 @@ void printItem(const Item &item) {
   cout << item.name << ", quantity: " << item.quantity << endl;
 }
 
-// void initItem(Item &item, string name, int quantity) {
-//   item.name = name;
-//   item.quantity = quantity;
-// }
-
 // Add functions as wanted/needed to help with file processing
-//
-// void stringSplit(char str[], Item &item) {
-//
-//   char * token;
-//   token = strtok(str, ":");
-//   item.name = token;
-// }
+
 
 int main(int argc, char *argv[]) {
 
