@@ -1,7 +1,9 @@
 // Project1
-//Item purchaser
+//Smart Vendor
+//Smart digital vending machine that allows user to 'vend' multiple items at 
+//the same time in a shop/checkout style.
 // Programmer name: Samuel Fuller
-// Last modified:  25 Sep 2019
+// Last modified:  3 October 2019
 
 #include "cinreader.h"
 #include <algorithm>
@@ -173,60 +175,81 @@ void initItem(Item &item, string name, double price, int quantity,
   item.addedToCart = addedToCart;
 }
 
+//increaseQuantity is called to increase the stock quantity after an item is
+//removed from the cart.
 void increaseQuantity(Machine &machine, Item &item, int amount) {
   for (Item &i : machine.menu) {
     if (item.name == i.name) {
-      item.quantity = item.quantity + amount;
       i.quantity = i.quantity + amount;
-    } 
+    }
   }
 }
 
+//removeItem removes an item from the cart. Messy headache function
 void removeItem(Machine &machine, Cart &cart) {
   int index = 0;
   string removeItem;
-  Item item;
+  Item item;         //empty Item so users' chosen item can be reassigned to it
   int removeAmount = 0;
-  
-  cout << "Which item would you like to remove?";
+  cout << "Which item would you like to remove?"; 
+  cout << "(or type 'all' to empty cart): ";
   removeItem = c.readString();
-  transform(removeItem.begin(), removeItem.end(), removeItem.begin(), ::tolower);
-  
-  item = stringToItem(removeItem, machine);
-  
-  for (Item &i : cart.item) {
-    index ++;
-    if (item.name == i.name) {
-      if (i.amountInCart >= 1) {  
-        cout << "How many would you like to remove?";
-        removeAmount = c.readInt(1, i.amountInCart); 
+  transform(removeItem.begin(), removeItem.end(), removeItem.begin(), 
+            ::tolower);
+  for (Item &i : cart.item) { //loops full cart
+    index ++;    //keeps track of the current loop count for vector index check
+    if (removeItem == i.name) {
+      if (i.amountInCart >= 1) {
+        cout << "How many would you like to remove: ";
+        removeAmount = c.readInt(1, i.amountInCart);
         if (i.amountInCart == removeAmount) {
           cart.price = cart.price - (i.price * removeAmount);
           cart.amountInCart = cart.amountInCart - removeAmount;
           i.amountInCart = i.amountInCart - removeAmount;
-          i.addedToCart == false;
+          increaseQuantity(machine, i, removeAmount);
+          for (Item &j : machine.menu) {
+            if (i.name == j.name) {
+              i.addedToCart = false; //both cart and machine item need to be
+              j.addedToCart = false; //hit or flag values won't change... ?
+            }
+          }
           cart.item.erase(cart.item.begin() + index - 1);
         } else if (i.amountInCart > removeAmount) {
           cart.price = cart.price - (i.price * removeAmount);
           cart.amountInCart = cart.amountInCart - removeAmount;
           i.amountInCart = i.amountInCart - removeAmount;
-          i.addedToCart == false;
+          increaseQuantity(machine, i, removeAmount);
        }
       } else {
         cout << "That item isn't in the cart to remove. :(";
-        msleep(1500);
+        msleep(1000);
       }
-      increaseQuantity(machine, i, removeAmount);    
+      break;
+    } else if (removeItem == "all") {  //clears all items from cart
+        cart.price = cart.price - (i.price * i.amountInCart);
+        cart.amountInCart = cart.amountInCart - i.amountInCart;
+        for (Item &j : machine.menu) {
+          if (i.name == j.name) {
+            j.addedToCart = false;
+            increaseQuantity(machine, i, i.amountInCart);
+          }
+        }
+        i.amountInCart = i.amountInCart - i.amountInCart;
+        cart.item.erase(cart.item.begin(), cart.item.end());
+    } else {
+      cout << "That is not a valid choice. Please make a new selection";
+      msleep(1000);
     }
   }
-  for (Item &j : machine.menu) {
-    if (item.name == j.name) {
-      j.addedToCart == false;
-    } 
+  if (cart.price < 0.01) { //final check to ensure if cart is empty that price
+    cart.price = 0.00; //is ensured to be 0.00, had an instance of -0.00 ?
   }
 }
 
-void checkout(Shop &shop, Machine machine, Cart &cart, User &user, string view) {
+//checkout displays the checkout information and does the calculations
+//post purchasing items.
+void checkout(Shop &shop, Machine &machine, Cart &cart, User &user, 
+              string view) {
   string view2;
   if (view == "checkout") {
     clearScreen();
@@ -234,26 +257,37 @@ void checkout(Shop &shop, Machine machine, Cart &cart, User &user, string view) 
     menu(user, view);
     cout << "You have chose to purchase ";
     for (int i = 0; i < cart.item.size(); i++) {
-      cout << cart.item[i].name;
+      cout << cart.item[i].amountInCart;
       cout << " ";
-      // cout << right << setw(47) << "|--------------------------------------|\n";
+      cout << cart.item[i].name; //displays each item in the cart
+      cout << " ";
     }
-    cout << " for a total of " << cart.price;
+    cout << "for a total of " << cart.price << ".";
     cout << " \nWould you like to confirm this purchase: ";
     view2 = c.readString();
   }
   if (view2 == "back") {
-  } else if (view2 == "confirm") {
+  } else if (view2 == "confirm" || view2 == "yes") {
+    //have instances where user.balance < cart.price conditional will trigger
+    //when the user.balance == cart.price in the program.... unknown cause..
+    //possible c++ double rounding issue with the decimal precision stuff?
     if (user.balance < cart.price) {
-      cout << "\nSorry you do not have enough money. Please remove some items first.";
-      msleep(3000);
+      cout << "Sorry you do not have enough money. Please remove some items"; 
+      cout << " first.";
+      msleep(2000);
     } else {
       cout << "\nThank you for your patronage!\n";
       cout << "You purchased ";
       for (int i = 0; i < cart.item.size(); i++) {
         cout << cart.item[i].amountInCart << " " << cart.item[i].name << " ";
+        cart.item[i].addedToCart = false;
+        for (Item &j : machine.menu) {
+          if (cart.item[i].name == j.name) {
+            j.addedToCart = false;
+          }
+        }
       }
-      cout << " for a total of " << cart.price << ".";
+      cout << "for a total of " << cart.price << ".";
       user.balance = user.balance - cart.price;
       cout << "\nYou now have a balance of " << user.balance << " remaining.";
       cart.item.clear();
@@ -264,21 +298,29 @@ void checkout(Shop &shop, Machine machine, Cart &cart, User &user, string view) 
       view2 = c.readString();
       if (view2 == "exit") {
         shop.running = false;
-        }
-      } 
-    } else if (view2 == "exit") {
-      shop.running = false;
-    } else {
-      cout << "That is an invalid entry. Please enter again.";
-      msleep(1500);
-  } 
+      } else if (view2 == "back") {
+        
+      } else {
+        cout << "That is an invalid entry.... Going back to main menu since"; 
+        cout << " you can't read...";
+        msleep(3000);
+      }
+    }
+  } else if (view2 == "exit") {
+    shop.running = false;
+  } else {
+    cout << "That is an invalid entry. Try again.";
+    msleep(1000);
+    checkout(shop, machine, cart, user, "checkout");
+  }
 }
 
 //showCart displays the users current cart with or without items
-void showCart(Shop &shop, Machine machine, Cart &cart, User &user, string view) {
+void showCart(Shop &shop, Machine &machine, Cart &cart, User &user, 
+              string view) {
   // calculateCart(cart);
   string view2;
-  if (view == "cart") {
+  if (view == "cart") { //cart display
     clearScreen();
     banner();
     menu(user, view);
@@ -297,7 +339,7 @@ void showCart(Shop &shop, Machine machine, Cart &cart, User &user, string view) 
     cout << "\nInput a command: ";
     view2 = c.readString();
     transform(view.begin(), view.end(), view.begin(), ::tolower);
-    
+
   }
   if (view2 == "back") {
   } else if (view2 == "remove") {
@@ -309,7 +351,7 @@ void showCart(Shop &shop, Machine machine, Cart &cart, User &user, string view) 
     if (cart.item.size() >= 1) {
       checkout(shop, machine, cart, user, view2);
     } else {
-      cout << "sorry there are no items in your cart to checkout. Add some!";
+      cout << "Sorry but there are no items in your cart to checkout.";
       msleep(2000);
     }
     if (shop.running == true && cart.item.size() >= 1) {
@@ -317,7 +359,7 @@ void showCart(Shop &shop, Machine machine, Cart &cart, User &user, string view) 
     }
   } else {
     cout << "That is an invalid entry. Please enter again.";
-    msleep(1500);
+    msleep(1000);
     showCart(shop, machine, cart, user, view);
   }
 }
@@ -348,8 +390,8 @@ int addToCartAmount(Cart &cart, Item &item) {
       cart.item[i].amountInCart += itemAmount;
     }
   }
-  cart.amountInCart += itemAmount;
-  item.amountInCart += itemAmount;
+  cart.amountInCart += itemAmount; //increasing the param for cart item
+  item.amountInCart += itemAmount; //increasing the param for machine item
   cart.price = cart.price + (item.price * itemAmount);
   return itemAmount;
 }
@@ -357,25 +399,31 @@ int addToCartAmount(Cart &cart, Item &item) {
 //addToCartItem adds slected item to the cart and updates menu/cart values
 void addToCartItem(Machine &machine, Cart &cart, Item &item) {
   int itemAmount;
+  int index = 0;
   for (Item &i : machine.menu) {
+    index++;
     if (item.name == i.name) {
-      if (i.addedToCart == false) {
+      if (i.addedToCart == false) { //checks if item has been added to cart b4
         cart.item.push_back(item);
         itemAmount = addToCartAmount(cart, item);
         if (itemAmount > 0) {
           reduceQuantity(machine, item, itemAmount);
-          cout << "Added " << itemAmount << " " << item.name << " to your cart.";
+          cout << "Added " << itemAmount << " " << item.name; 
+          cout << " to your cart.";
           i.addedToCart = true;
+          item.addedToCart = true;
           msleep(1000);
         } else {
+          cart.item.erase(cart.item.begin() + index - 1);
           cout << "Nothing has been added :(";
           msleep(1000);
         }
-      } else {
+      } else { //if item has been added before will only increase quantity;
         itemAmount = addToCartAmount(cart, item);
           if (itemAmount > 0) {
             reduceQuantity(machine, item, itemAmount);
-            cout << "Added another " << itemAmount << " " << item.name << " to your cart.";
+            cout << "Added another " << itemAmount << " " << item.name;
+            cout << " to your cart.";
             msleep(1000);
         } else {
           cout << "Nothing has been added :(";
@@ -391,7 +439,8 @@ bool quantityCheck(Machine &machine, Item &item) {
   for (Item i : machine.menu) {
     if (i.name == item.name) {
       if (item.quantity < 1) {
-        cout << "Sorry there aren't any left choose again or proceed to checkout.";
+        cout << "Sorry there aren't any left choose again or proceed to"; 
+        cout << " checkout.";
         return false;
       }
     }
@@ -408,10 +457,11 @@ void selectItem(Shop &shop, Machine &machine, Cart &cart, User &user) {
   itemChoice = c.readString();
 //transform to iterate over the string 'itemChoice' to change each character
 //to lowercase for multiple input variations
-  transform(itemChoice.begin(), itemChoice.end(), itemChoice.begin(), ::tolower);
-  
+  transform(itemChoice.begin(), itemChoice.end(), itemChoice.begin(), 
+            ::tolower);
+
   item = stringToItem(itemChoice, machine);
-  
+
   if (itemChoice == "cake" || itemChoice == "fruit" || itemChoice == "chips"
   || itemChoice == "soda" || itemChoice == "juice") {
     for (Item &i : machine.menu) {
@@ -421,7 +471,7 @@ void selectItem(Shop &shop, Machine &machine, Cart &cart, User &user) {
         } else {
           selectItem(shop, machine, cart, user);
           }
-        } 
+        }
       }
     } else if (itemChoice == "cart") {
       showCart(shop, machine, cart, user, itemChoice);
@@ -442,6 +492,8 @@ double doubleRand() {
   return double(rand()) / (double(RAND_MAX) + 1.0) + randInt;
 }
 
+//need to use better way to initialize the datatypes probably via constructors
+//and classes opposed to structs... CBA right now.. soon™ maybe next project 
 main(){
   srand(time(0));
   clearScreen();
@@ -458,9 +510,9 @@ main(){
   initItem(chips, "chips", 1.00, 6, 0, false);
   initItem(soda, "soda", 1.50, 7, 0, false);
   initItem(juice, "juice", 1.90, 10, 0, false);
-  
-  //initializes user random balance
-  user.balance = doubleRand(); 
+
+  //initializes user random starting balance
+  user.balance = doubleRand();
 
   Machine machine;
   machine.menu.push_back(cake);
@@ -477,8 +529,7 @@ main(){
     menuRow(machine);
     selectItem(shop, machine, cart, user);
   }
-  cout << "\n\n";
-  fancyDelay("Goodbye...", 150);
+  fancyDelay("Goodbye...", 100);
   clearScreen();
   exit(0);
   return 0;
