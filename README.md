@@ -27,7 +27,7 @@ while C++ projects will be using the catch2 library.
 Most of these projects are coded soley by me but a few have contributions by Derek Bergman and outside libraries which are noted as used.
 
 Additionally, I am always up for collaboration on projects and am looking to learn. If you would like to work with me contact me
-here on github or by email at: ohhnate@gmail.com
+by email at: ohhnate@gmail.com
 
 ## Authors
 
