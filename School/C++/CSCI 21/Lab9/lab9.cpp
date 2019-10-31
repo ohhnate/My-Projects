@@ -10,6 +10,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <cctype>
 using std::invalid_argument;
 using std::ios;
 using std::string;
@@ -41,14 +42,14 @@ unsigned int countChars (string* theString, unsigned int& alpha, unsigned int& n
 	if (theString == nullptr) {
 		throw std::invalid_argument("NULL STRING POINTER");
 	}
-	int digits, letters, i = 0;
-	 while (theString->at(i) <= theString->size()) {
-	   if (theString->at(i) >='0' && theString->at(i) <='9') {
-	      digits++;
-	   } else if ((theString->at(i) >='a' && theString->at(i) <='z') || (theString->at(i) >='A' &&theString->at(i) <='Z')) {
-			 	letters++;
-		 }
-		 i++;
+	int digits=0, letters=0, i=0;
+	for(i = 0; i < theString->size(); i++) {
+		if(isdigit(theString->at(i))) {
+			 digits++;
+		}
+		else if(isalpha(theString->at(i))) {
+			 letters++;
+		}
  }
 	alpha = letters;
 	num = digits;
@@ -61,7 +62,8 @@ bool findWord (string* theString, string theWord) noexcept(false) {
 	if (theString == nullptr){
 		throw std::invalid_argument("NULL STRING POINTER");
 	}
-	if(theString->find(theWord) != string::npos) {
+	size_t wordSearch = theString->find(theWord);
+	if(wordSearch == string::npos) {
 		return false;
 	}
 	return true;
@@ -80,6 +82,13 @@ bool findWord (string* theString, string theWord) noexcept(false) {
 bool replaceWord (string* theString, string oldWord, string newWord) noexcept(false) {
 	if (theString == nullptr){
 		throw std::invalid_argument("NULL STRING POINTER");
+	}
+	size_t position = theString->find(oldWord);
+	if (position != string::npos) {
+		theString->replace(position, oldWord.length(), newWord);
+		return true;
+	} else {
+		return false;
 	}
 }
 
@@ -100,7 +109,9 @@ struct Item {
 // Allocate memory for a dynamic Item, populated with the given data.
 // Return a pointer to the newly allocated Item.
 Item* makeDynamicItem (string newName, float newPrice, unsigned int newQuantity) {
-
+	Item* pItem(nullptr);
+	pItem = new Item(newName, newPrice, newQuantity);
+	return pItem;
 }
 
 // Free the memory associated with a dynamic Item and null the pointer.
@@ -109,6 +120,8 @@ void clearDynamicItem (Item*& item) noexcept(false) {
 	if (item == nullptr){
 		throw std::invalid_argument("NULL ITEM POINTER");
 	}
+	delete item;
+	item = nullptr;
 }
 
 // Update an Item with a new name, price, and quantity.
@@ -117,6 +130,9 @@ void updateItem (Item* item, string newName, float newPrice, unsigned int newQua
 	if (item == nullptr){
 		throw std::invalid_argument("NULL ITEM POINTER");
 	}
+	item->name = newName;
+	item->price = newPrice;
+	item->quantity = newQuantity;
 }
 
 // Return the price to purchase an Item (Item quantity * Item price).
@@ -125,6 +141,8 @@ float calculatePurchasePrice (Item* item) noexcept(false) {
 	if (item == nullptr){
 		throw std::invalid_argument("NULL ITEM POINTER");
 	}
+	float cost = item->quantity * item->price;
+	return cost;
 }
 
 // Return a string representation of an Item.
@@ -136,6 +154,12 @@ string toString (Item* item) noexcept(false) {
 	if (item == nullptr){
 		throw std::invalid_argument("NULL ITEM POINTER");
 	}
+	stringstream strout;
+	strout.setf(ios::fixed);
+  strout.setf(ios::showpoint);
+	strout.precision(2);
+	strout << item->name << ", " << item->quantity << " @ $" << item->price;
+	return strout.str();
 }
 
 /*
