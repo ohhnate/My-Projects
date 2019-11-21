@@ -11,6 +11,7 @@
 #include <vector>
 using std::string;
 using std::stringstream;
+using std::to_string;
 using std::vector;
 
 // Compute and return the factorial of value. 0 and 1 return 1.
@@ -52,14 +53,24 @@ bool wordIsPalindrome (string word) {
 // starting at a given index and going forward to the end of the vector.
 // Recursive.
 string vectorForwardsAsString (const vector<int>& v, unsigned int index) {
-
+	string forwardString;
+	if (index >= v.size()) {
+      return forwardString;
+  }
+	forwardString = to_string(v.at(index)) + " ";
+  return forwardString + vectorForwardsAsString(v, index + 1);
 }
 
 // Produces a string containing the contents of a vector, separated by single spaces,
 // starting at a given index and going backward to the end of the vector.
 // Recursive.
 string vectorBackwardsAsString (const vector<int>& v, int startIndex) {
-
+	string backwardString;
+	if (startIndex < 0) {
+      return backwardString;
+  }
+	backwardString = to_string(v.at(startIndex)) + " ";
+	return backwardString + vectorBackwardsAsString(v, startIndex - 1);
 }
 
 TEST_CASE("recursive functions") {
