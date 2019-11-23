@@ -1,3 +1,9 @@
+//Project3 Doubly Linked Lists
+//
+//Programmer: Samuel Fuller
+//Last Modified: 22 November 2019
+
+
 #pragma once
 #include <fstream>
 #include <iostream>
